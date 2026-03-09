@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from app.main import app
 from app.db.models import Base
 from app.db.session import get_db
@@ -30,10 +30,8 @@ client = TestClient(app)
 # ------------------- FIXTURE DB -------------------
 @pytest.fixture(scope="module", autouse=True)
 def test_db():
-    # Création tables
     Base.metadata.create_all(bind=engine)
     yield
-    # Suppression tables après tests
     Base.metadata.drop_all(bind=engine)
 
 # ------------------- FIXTURE ADMIN TOKEN -------------------
@@ -61,7 +59,7 @@ def patient_data(test_db, admin_token):
     data = {
         "first_name": "John",
         "last_name": "Doe",
-        "date_of_birth": "1990-01-01",  # FastAPI attend une string ISO
+        "date_of_birth": "1990-01-01",
         "email": "john.doe@example.com",
         "phone": "1234567890",
         "address": "123 Main St",
@@ -157,14 +155,19 @@ def test_create_appointment(admin_token, patient_data, doctor_data):
     appointment = {
         "patient_id": patient_data["id"],
         "doctor_id": doctor_data["id"],
-        "start_time": start_time.isoformat(),
-        "end_time": end_time.isoformat(),
+        "start_time": start_time,  # datetime object direct
+        "end_time": end_time,      # datetime object direct
         "status": "scheduled",
         "notes": "Regular checkup"
     }
+    # FastAPI / Pydantic accepte maintenant un datetime objet pour le test
     response = client.post(
         "/api/appointments/",
-        json=appointment,
+        json={
+            **appointment,
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat()
+        },
         headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200

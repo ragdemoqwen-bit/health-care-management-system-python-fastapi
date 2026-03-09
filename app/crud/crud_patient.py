@@ -1,39 +1,53 @@
+"""
+CRUD operations for Patients.
+"""
+
+from typing import Any, Dict, Optional, Union
 from sqlalchemy.orm import Session
-from app.db.models import Patient
-from app.schemas.patient import PatientCreate, PatientUpdate
 
-class CRUDPatient:
-    def get(self, db: Session, patient_id: int):
-        return db.query(Patient).filter(Patient.id == patient_id).first()
+from app import crud
+from app.db.base import Patient
+from app.models.pydantic import PatientCreate, PatientUpdate
+from app.schemas.patient import Patient as PatientSchema
 
-    def get_all(self, db: Session, skip: int = 0, limit: int = 100):
-        return db.query(Patient).offset(skip).limit(limit).all()
 
-    def create(self, db: Session, obj_in: PatientCreate):
-        try:
-            obj_data = obj_in.model_dump()
-        except AttributeError:
-            obj_data = obj_in.dict()
-        db_obj = Patient(**obj_data)
+class CRUDPatient(crud.CRUDBase[Patient, PatientCreate, PatientUpdate]):
+    """Patient CRUD operations."""
+    
+    def get_by_email(self, db: Session, *, email: str) -> Optional[Patient]:
+        """Get patient by email."""
+        return db.query(Patient).filter(Patient.email == email).first()
+    
+    def create(self, db: Session, *, obj_in: PatientCreate) -> Patient:
+        """Create new patient."""
+        db_obj = Patient(
+            first_name=obj_in.first_name,
+            last_name=obj_in.last_name,
+            date_of_birth=obj_in.date_of_birth,
+            email=obj_in.email,
+            phone=obj_in.phone,
+            address=obj_in.address,
+            insurance_provider=obj_in.insurance_provider,
+            insurance_id=obj_in.insurance_id,
+        )
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
         return db_obj
 
-    def update(self, db: Session, db_obj: Patient, obj_in: PatientUpdate):
-        try:
+    def update(self, db: Session, *, db_obj: Patient, obj_in: Union[PatientUpdate, Dict[str, Any]]) -> Patient:
+        """Update patient."""
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
             update_data = obj_in.model_dump(exclude_unset=True)
-        except AttributeError:
-            update_data = obj_in.dict(exclude_unset=True)
+        
         for field, value in update_data.items():
             setattr(db_obj, field, value)
+        
         db.commit()
         db.refresh(db_obj)
         return db_obj
 
-    def delete(self, db: Session, db_obj: Patient):
-        db.delete(db_obj)
-        db.commit()
-        return db_obj
 
-patient = CRUDPatient()
+patient = CRUDPatient(Patient)

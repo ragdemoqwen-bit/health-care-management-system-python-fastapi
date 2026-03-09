@@ -145,7 +145,6 @@ jobs:
           SECRET_KEY: test_super_secret_key_very_long_for_ci_32_plus_chars_123456789
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/app
         run: |
-          # ✅ FIX IMPORTS + CREATE TABLES
           python -c "
 import sys, os
 sys.path.insert(0, '.')

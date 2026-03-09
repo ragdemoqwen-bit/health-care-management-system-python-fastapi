@@ -3,7 +3,7 @@ name: Healthcare DevOps Pipeline
 # When to run this pipeline
 on:
   push:
-    branches: [main, devops-pipeline]
+    branches: [main, devops-pipeline,youssef]
   pull_request:
     branches: [main]
 

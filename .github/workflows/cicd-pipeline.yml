@@ -157,7 +157,6 @@ try:
 except Exception as e:
     print(f'⚠️ Tables creation warning: {e}')
 "
-
           pytest . -v \
             --cov=app \
             --cov-report=xml \

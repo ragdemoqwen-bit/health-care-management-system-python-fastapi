@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.db.session import engine, get_db
 from app.db import models
 from app.api.deps import get_current_user
+from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -90,7 +91,7 @@ async def root():
 @app.get("/health", tags=["Health"])
 async def health_check(db: Session = Depends(get_db)):
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         raise HTTPException(

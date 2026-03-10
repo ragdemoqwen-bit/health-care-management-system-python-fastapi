@@ -4,7 +4,7 @@ CRUD operations for Patients.
 from typing import Any, Dict, Optional, Union
 from sqlalchemy.orm import Session
 
-from app.crud.base import CRUDBase
+from app.crud.crud_base import CRUDBase
 from app.db.models import Patient  # ✅ FIX: import correct
 from app.schemas.patient import PatientCreate, PatientUpdate
 

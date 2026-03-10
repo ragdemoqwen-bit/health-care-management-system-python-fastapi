@@ -4,8 +4,9 @@ from unittest.mock import patch, MagicMock
 from datetime import date, datetime
 from app.main import app
 from app.db.session import get_db
+from app.api.deps import get_current_user, get_current_active_user  # ← IMPORT CRITIQUE
 
-# ─── Helper : fabrique un faux objet SQLAlchemy-like ──────────────────────────
+# Tes fonctions make_* restent IDENTIQUES
 def make_patient(overrides=None):
     obj = MagicMock()
     obj.id = 1
@@ -49,22 +50,26 @@ def make_appointment(patient_id=1, doctor_id=1):
     obj.created_at = datetime.now()
     return obj
 
-# ─── Fixture client avec FAKE JWT ─────────────────────────────────────────────
 @pytest.fixture
 def client():
-    # FAKE JWT qui passe le middleware (testé partout)
-    fake_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.fake-jwt-for-tests"
+    # ✅ MOCK USER COMPLET (admin + is_active=True)
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.is_active = True  # ← CRITIQUE pour get_current_active_user
+    mock_user.role = "admin"
     
-    # Client AVEC headers JWT
-    test_client = TestClient(app, headers={"Authorization": f"Bearer {fake_token}"})
-    
-    # Mock DB
+    # ✅ MOCK DB
     mock_db = MagicMock()
-    def override_get_db():
-        yield mock_db
-    app.dependency_overrides[get_db] = override_get_db
     
-    # Mock CRUD (évite ResponseValidationError)
+    # ✅ OVERRIDE TOUTES les dépendances FastAPI
+    app.dependency_overrides = {
+        get_db: lambda: mock_db,
+        get_current_user: lambda: mock_user,
+        get_current_active_user: lambda: mock_user  # ← FIX 403
+    }
+    
+    test_client = TestClient(app)
+    
     with (
         patch('app.crud.crud_patient.patient.create', return_value=make_patient()),
         patch('app.crud.crud_patient.patient.get_by_email', return_value=None),
@@ -74,9 +79,10 @@ def client():
     ):
         yield test_client
     
+    # Cleanup
     app.dependency_overrides.clear()
 
-# ─── Tests (identiques) ───────────────────────────────────────────────────────
+# TES TESTS IDENTIQUES
 def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -130,7 +136,6 @@ def test_create_appointment(client, patient_data, doctor_data):
         dt += timedelta(days=1)
         if dt.weekday() == 1:
             break
-
     data = {
         "patient_id": patient_data["id"],
         "doctor_id": doctor_data["id"],

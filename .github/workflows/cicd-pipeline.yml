@@ -149,21 +149,17 @@ jobs:
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_healthcare_db
           SQLALCHEMY_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_healthcare_db
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: .
         run: |
-          python -c "
-          import sys
-          import os
-          sys.path.insert(0, '.')
-          os.environ['SQLALCHEMY_DATABASE_URL'] = 'postgresql://test_user:test_password@localhost:5432/test_healthcare_db'
-          try:
-              from app.db.session import engine
-              from app.db.models import Base
-              Base.metadata.create_all(bind=engine)
-              print('✅ Tables created!')
-          except Exception as e:
-              print(f'⚠️ Tables warning: {e}')
-          "
+          cd app && python -c "
+          import sys, os
+          sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+          from db.session import engine
+          from db.models import Base
+          Base.metadata.create_all(bind=engine)
+          print('✅ Tables created!')
+          " || echo '⚠️ Tables warning'
+
 
       - name: 🧪 Run tests with coverage
         env:

@@ -35,5 +35,10 @@ class CRUDPatient(CRUDBase[Patient, PatientCreate, PatientUpdate]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
+    def remove(self, db: Session, *, id: int) -> Patient:  # ✅ AJOUTÉ
+        obj = db.query(self.model).get(id)
+        db.delete(obj)
+        db.commit()
+        return obj    
 
 patient = CRUDPatient(Patient)

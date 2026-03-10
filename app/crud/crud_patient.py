@@ -39,6 +39,11 @@ class CRUDPatient(CRUDBase[Patient, PatientCreate, PatientUpdate]):
         obj = db.query(self.model).get(id)
         db.delete(obj)
         db.commit()
-        return obj    
+        return obj
+    def delete(self, db: Session, *, db_obj: Patient) -> Patient:
+    """Delete patient."""
+    db.delete(db_obj)
+    db.commit()
+    return db_obj        
 
 patient = CRUDPatient(Patient)

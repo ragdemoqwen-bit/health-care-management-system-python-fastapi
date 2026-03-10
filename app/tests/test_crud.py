@@ -39,7 +39,7 @@ def test_create_patient(test_db: Session, patient_in):
 
 def test_get_patient(test_db: Session, patient_in):
     created = crud_patient.patient.create(test_db, obj_in=patient_in)
-    fetched = crud_patient.patient.get(test_db, patient_id=created.id)
+    fetched = crud_patient.patient.get(test_db, id=created.id)
     assert fetched.id == created.id
 
 def test_update_patient(test_db: Session, patient_in):

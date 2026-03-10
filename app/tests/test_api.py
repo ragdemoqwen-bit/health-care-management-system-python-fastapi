@@ -1,11 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 from datetime import date, datetime
 from app.main import app
-from app.api.deps import get_db, get_current_user, get_current_active_user
+from app.db.session import get_db
 
-# Helper : objets SQLAlchemy-like COMPLETS
+# ─── Helper : fabrique un faux objet SQLAlchemy-like ──────────────────────────
 def make_patient(overrides=None):
     obj = MagicMock()
     obj.id = 1
@@ -37,37 +37,46 @@ def make_doctor(overrides=None):
             setattr(obj, k, v)
     return obj
 
+def make_appointment(patient_id=1, doctor_id=1):
+    obj = MagicMock()
+    obj.id = 1
+    obj.patient_id = patient_id
+    obj.doctor_id = doctor_id
+    obj.start_time = datetime.now()
+    obj.end_time = datetime.now()
+    obj.status = "scheduled"
+    obj.notes = "Test appointment"
+    obj.created_at = datetime.now()
+    return obj
+
+# ─── Fixture client avec FAKE JWT ─────────────────────────────────────────────
 @pytest.fixture
 def client():
-    # ✅ 1. Mock User ADMIN (POUR 401)
-    mock_user = MagicMock()
-    mock_user.is_active = True
-    mock_user.role = "admin"
+    # FAKE JWT qui passe le middleware (testé partout)
+    fake_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.fake-jwt-for-tests"
     
-    # ✅ 2. Mock DB
+    # Client AVEC headers JWT
+    test_client = TestClient(app, headers={"Authorization": f"Bearer {fake_token}"})
+    
+    # Mock DB
     mock_db = MagicMock()
+    def override_get_db():
+        yield mock_db
+    app.dependency_overrides[get_db] = override_get_db
     
-    # ✅ 3. Dependency Overrides DIRECTS (100% sûr)
-    app.dependency_overrides = {
-        get_db: lambda: mock_db,
-        get_current_user: lambda: mock_user,
-        get_current_active_user: lambda: mock_user
-    }
-    
-    # ✅ 4. Mock CRUD returns
+    # Mock CRUD (évite ResponseValidationError)
     with (
         patch('app.crud.crud_patient.patient.create', return_value=make_patient()),
         patch('app.crud.crud_patient.patient.get_by_email', return_value=None),
         patch('app.crud.crud_doctor.doctor.create', return_value=make_doctor()),
         patch('app.crud.crud_doctor.doctor.get_by_email', return_value=None),
-        patch('app.crud.crud_appointment.appointment.create', return_value=make_patient())
+        patch('app.crud.crud_appointment.appointment.create', return_value=make_appointment())
     ):
-        yield TestClient(app)
+        yield test_client
     
-    # Cleanup
     app.dependency_overrides.clear()
 
-# Tests identiques
+# ─── Tests (identiques) ───────────────────────────────────────────────────────
 def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -101,7 +110,7 @@ def patient_data(client):
     }
     response = client.post("/api/patients/", json=data)
     assert response.status_code == 200
-    return {"id": 1}  # Simplifié
+    return {"id": 1}
 
 @pytest.fixture
 def doctor_data(client):
@@ -112,20 +121,23 @@ def doctor_data(client):
     }
     response = client.post("/api/doctors/", json=data)
     assert response.status_code == 200
-    return {"id": 1}  # Simplifié
+    return {"id": 1}
 
 def test_create_appointment(client, patient_data, doctor_data):
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     dt = datetime.now()
     for _ in range(14):
         dt += timedelta(days=1)
-        if dt.weekday() == 1: break
-    
+        if dt.weekday() == 1:
+            break
+
     data = {
-        "patient_id": 1, "doctor_id": 1,
-        "start_time": dt.replace(hour=10).isoformat(),
-        "end_time": dt.replace(hour=10, minute=30).isoformat(),
-        "status": "scheduled"
+        "patient_id": patient_data["id"],
+        "doctor_id": doctor_data["id"],
+        "start_time": dt.replace(hour=10, minute=0, second=0, microsecond=0).isoformat(),
+        "end_time": dt.replace(hour=10, minute=30, second=0, microsecond=0).isoformat(),
+        "status": "scheduled",
+        "notes": "Test appointment"
     }
     response = client.post("/api/appointments/", json=data)
     assert response.status_code == 200

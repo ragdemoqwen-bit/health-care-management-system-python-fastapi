@@ -228,18 +228,22 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: 🚀 Deploy
-    runs-on: ubuntu-latest
-    needs: build-docker
-    if: |
-      github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
-      needs.build-docker.result == 'success'
-    steps:
-      - name: 🚀 Render Deploy
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK || '' }}" || true
-          echo "✅ Deploy triggered"
+  name: 🚀 Deploy
+  runs-on: ubuntu-latest
+  needs: build-docker
+  if: |
+    (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/youssef') &&
+    github.event_name == 'push' &&
+    needs.build-docker.result == 'success'
+  steps:
+    - name: 🚀 Test Deploy Hook
+      run: |
+        echo "🎉 build-docker SUCCESS ✅"
+        echo "🚀 Branche: ${{ github.ref }}"
+        echo "📋 Event: ${{ github.event_name }}"
+        echo "✅ Deploy prêt (mock)"
+        echo "Ton Docker: ***/healthcare-fastapi:youssef LIVE !"
+
 
   summary:
     name: 📊 Summary

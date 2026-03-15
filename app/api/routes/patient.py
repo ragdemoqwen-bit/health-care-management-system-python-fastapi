@@ -17,11 +17,11 @@ router = APIRouter()
 def read_patients(
     skip: int = 0,
     limit: int = 100,
+    db: Session = Depends(get_db),  # ✅ dans la signature
 ) -> Any:
     """
     Retrieve patients.
     """
-    db: Session = Depends(get_db)
     patients = patient.get_multi(db, skip=skip, limit=limit)
     return patients
 
@@ -30,11 +30,11 @@ def read_patients(
 def create_patient(
     *,
     patient_in: PatientCreate,
+    db: Session = Depends(get_db),  # ✅ dans la signature
 ) -> Any:
     """
     Create new patient.
     """
-    db: Session = Depends(get_db)
     existing_patient = patient.get_by_email(db, email=patient_in.email)
     if existing_patient:
         raise HTTPException(
@@ -57,12 +57,12 @@ def create_patient(
 def read_patient(
     *,
     id: int,
+    db: Session = Depends(get_db),              # ✅ dans la signature
+    current_user: User = Depends(get_current_user),  # ✅ dans la signature
 ) -> Any:
     """
     Get patient by ID.
     """
-    db: Session = Depends(get_db)
-    current_user: User = Depends(get_current_user),
     patient_obj = patient.get(db, id=id)
     if not patient_obj:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -78,11 +78,11 @@ def update_patient(
     *,
     id: int,
     patient_in: PatientUpdate,
+    db: Session = Depends(get_db),  # ✅ dans la signature
 ) -> Any:
     """
     Update a patient.
     """
-    db: Session = Depends(get_db)
     patient_obj = patient.get(db, id=id)
     if not patient_obj:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -103,11 +103,11 @@ def update_patient(
 def delete_patient(
     *,
     id: int,
+    db: Session = Depends(get_db),  # ✅ dans la signature
 ) -> Any:
     """
     Delete a patient.
     """
-    db: Session = Depends(get_db)
     patient_obj = patient.get(db, id=id)
     if not patient_obj:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -120,11 +120,10 @@ def delete_patient(
 def search_patients(
     *,
     query: str = Query(..., min_length=3),
-
+    db: Session = Depends(get_db),  # ✅ dans la signature
 ) -> Any:
     """
     Search for patients by name or email.
     """
-    db: Session = Depends(get_db)
     patients = patient.search(db, query=query)
     return patients

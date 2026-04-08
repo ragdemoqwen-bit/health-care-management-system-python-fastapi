@@ -12,6 +12,8 @@ class PatientBase(BaseModel):
     address: str
     insurance_provider: Optional[str] = None
     insurance_id: Optional[str] = None
+    ssn: str = "000-00-0000"  # Simulated Social Security Number (PII Leak)
+    internal_notes: str = "Patient has history of non-payment" # Sensitive Context Leak
 
 # Properties to receive on patient creation
 class PatientCreate(PatientBase):

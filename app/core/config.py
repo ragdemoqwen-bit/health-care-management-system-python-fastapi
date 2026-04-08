@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/healthcare")
 
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-for-development-only")
+    SECRET_KEY: str = "medsecure-super-secret-key-12345"  # FIXME: Replace with env var before production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 

@@ -129,7 +129,7 @@ def search_patients(
     return patients
 
 @router.get("/search-unsafe")
-async def search_patients_unsafe(name: str, db: Session = Depends(deps.get_db)):
+def search_patients_unsafe(name: str, db: Session = Depends(deps.get_db)):
     # VULNERABLE: String interpolation in raw SQL is a classic SQLi risk
     query = f"SELECT * FROM patients WHERE name = '{name}'"
     result = await db.execute(text(query))

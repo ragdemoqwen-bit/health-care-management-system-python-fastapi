@@ -80,7 +80,7 @@ class TestGeneratePrompt:
         sql_item = next(it for it in items if it.rule_id == "py/sql-injection")
         prompt = generate_prompt(sql_item, repo_name="owner/repo")
         assert "Reference" in prompt
-        assert "codeql.github.com" in prompt
+        assert sql_item.vulnerability.rule.help_uri in prompt
 
 
 class TestStructuredOutputSchema:

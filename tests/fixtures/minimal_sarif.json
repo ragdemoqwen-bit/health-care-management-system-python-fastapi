@@ -1,0 +1,146 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "organization": "GitHub",
+          "semanticVersion": "2.16.4",
+          "rules": [
+            {
+              "id": "py/sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": { "text": "SQL query built from user-controlled sources" },
+              "fullDescription": { "text": "Building a SQL query from user-controlled sources is vulnerable to insertion of malicious SQL code by the user." },
+              "defaultConfiguration": { "level": "error" },
+              "properties": {
+                "tags": ["security", "external/cwe/cwe-089"],
+                "security-severity": "9.8"
+              },
+              "helpUri": "https://codeql.github.com/codeql-query-help/python/py-sql-injection/"
+            },
+            {
+              "id": "py/hardcoded-credentials",
+              "name": "HardcodedCredentials",
+              "shortDescription": { "text": "Hard-coded credentials" },
+              "fullDescription": { "text": "Credentials are hard-coded in the source code." },
+              "defaultConfiguration": { "level": "error" },
+              "properties": {
+                "tags": ["security", "external/cwe/cwe-798"],
+                "security-severity": "9.1"
+              }
+            },
+            {
+              "id": "py/log-injection",
+              "name": "LogInjection",
+              "shortDescription": { "text": "Log entry created from user input" },
+              "fullDescription": { "text": "Building log entries from user-controlled data may allow forged entries." },
+              "defaultConfiguration": { "level": "warning" },
+              "properties": {
+                "tags": ["security", "external/cwe/cwe-117"],
+                "security-severity": "4.3"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "py/sql-injection",
+          "level": "error",
+          "message": { "text": "SQL injection via user input 'name'." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "app/routes/patient.py" },
+                "region": { "startLine": 134, "startColumn": 13, "endLine": 134, "endColumn": 62 }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": { "uri": "app/routes/patient.py" },
+                "region": { "startLine": 132, "startColumn": 32, "endColumn": 40 }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": { "uri": "app/routes/patient.py" },
+                          "region": { "startLine": 132, "startColumn": 32, "endColumn": 40 }
+                        },
+                        "message": { "text": "User input enters here." }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": { "uri": "app/routes/patient.py" },
+                          "region": { "startLine": 134, "startColumn": 13, "endColumn": 62 }
+                        },
+                        "message": { "text": "Tainted value reaches SQL query." }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "fingerprints": { "0": "fp-sql-001" }
+        },
+        {
+          "ruleId": "py/hardcoded-credentials",
+          "level": "error",
+          "message": { "text": "Hard-coded secret key for JWT." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "app/core/config.py" },
+                "region": { "startLine": 14, "startColumn": 5, "endLine": 14, "endColumn": 76 }
+              }
+            }
+          ],
+          "fingerprints": { "0": "fp-cred-001" }
+        },
+        {
+          "ruleId": "py/hardcoded-credentials",
+          "level": "error",
+          "message": { "text": "Hard-coded database password." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "app/core/config.py" },
+                "region": { "startLine": 12, "startColumn": 5, "endLine": 12, "endColumn": 95 }
+              }
+            }
+          ],
+          "fingerprints": { "0": "fp-cred-002" }
+        },
+        {
+          "ruleId": "py/log-injection",
+          "level": "warning",
+          "message": { "text": "User input in log statement." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "app/api/routes/auth.py" },
+                "region": { "startLine": 45, "startColumn": 5, "endLine": 45, "endColumn": 60 }
+              }
+            }
+          ],
+          "fingerprints": { "0": "fp-log-001" }
+        }
+      ]
+    }
+  ]
+}
